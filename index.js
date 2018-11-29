@@ -6,6 +6,11 @@ var EventEmitter = require('events').EventEmitter;
 var humanize = require('humanize-number');
 var chalk = require('chalk');
 var monkeypatch = require('monkeypatch');
+var prettyjson = require('prettyjson');
+
+var options = {
+  noColor: true
+};
 
 var colorCodes = {
 	5: 'red',
@@ -26,11 +31,13 @@ function defaultHandler(request, options, cb) {
 
 	var url = options.href || (options.protocol || 'http:') + '//' + (options.host || options.hostname) + options.path;
 	var method = (options.method || 'GET').toUpperCase();
+	var head = options.headers;
 	var signature = method + ' ' + url;
 	var start = new Date();
 	var wasHandled = typeof cb === 'function';
 
-	setImmediate(console.log, chalk.gray('      → ' + signature));
+	setImmediate(console.log, chalk.gray('      > ' + signature));
+	setImmediate(console.log, chalk.gray('        HEADERS:\n' + prettyjson.render(head, options, 10)));
 
 	return request(options, cb)
 		.on('response', function (response) {
@@ -42,10 +49,10 @@ function defaultHandler(request, options, cb) {
 
 			var status = response.statusCode;
 			var s = status / 100 | 0;
-			console.log('  ' + chalk[colorCodes[s]](status) + ' ← ' + signature + ' ' + chalk.gray(time(start)));
+			console.log('  ' + chalk[colorCodes[s]](status) + ' < ' + signature + ' ' + chalk.gray(time(start)) + '\n');
 		})
 		.on('error', function (err) {
-			console.log('  ' + chalk.red('xxx') + ' ← ' + signature + ' ' + chalk.red(err.message));
+			console.log('  ' + chalk.red('xxx') + ' < ' + signature + ' ' + chalk.red(err.message) + '\n');
 		});
 }
 
